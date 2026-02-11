@@ -10,7 +10,7 @@ interface ArtikelApiService {
     suspend fun getArtikel(): List<Artikel>
 
     companion object {
-        private const val BASE_URL = "https://your-api-endpoint.com/" // Placeholder
+        private const val BASE_URL = "http://212.227.79.83/api/" // Placeholder
 
         fun create(): ArtikelApiService {
             return Retrofit.Builder()
