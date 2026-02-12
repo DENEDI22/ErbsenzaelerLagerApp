@@ -16,6 +16,7 @@ import com.example.team6mobileapp.model.Artikel
 import com.example.team6mobileapp.ui.BarcodeScannerScreen
 import com.example.team6mobileapp.ui.ArtikelListScreen
 import com.example.team6mobileapp.ui.ArtikelDetailedView
+import com.example.team6mobileapp.ui.ArtikelCreateScreen
 import com.example.team6mobileapp.ui.theme.Team6MobileAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -44,6 +45,9 @@ fun AppNavigation() {
                 onNavigateToDetail = { artikel ->
                     selectedArtikel = artikel
                     navController.navigate("detail")
+                },
+                onNavigateToCreate = {
+                    navController.navigate("create")
                 }
             )
         }
@@ -67,6 +71,13 @@ fun AppNavigation() {
                     artikel = artikel
                 )
             }
+        }
+        composable("create") {
+            ArtikelCreateScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }

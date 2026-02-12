@@ -7,12 +7,16 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface ArtikelApiService {
     @GET("artikel") // Adjust if you have a specific path
     suspend fun getArtikel(): List<Artikel>
+
+    @POST("artikel")
+    suspend fun createArtikel(@Body request: com.example.team6mobileapp.model.ArtikelCreateRequest): ArtikelResponse
 
     @PUT("artikel/{nr}")
     suspend fun updateArtikel(@Path("nr") nr: Int, @Body request: ArtikelUpdateRequest): ArtikelResponse

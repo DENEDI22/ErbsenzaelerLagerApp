@@ -23,8 +23,15 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BarcodeScannerScreen(onNavigateToList: () -> Unit, onNavigateToDetail: (Artikel) -> Unit) {
+fun BarcodeScannerScreen(
+    onNavigateToList: () -> Unit,
+    onNavigateToDetail: (Artikel) -> Unit,
+    onNavigateToCreate: () -> Unit
+) {
     val context = LocalContext.current
+    val apiService = remember { ArtikelApiService.create() }
+    val scope = rememberCoroutineScope()
+
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -42,6 +49,39 @@ fun BarcodeScannerScreen(onNavigateToList: () -> Unit, onNavigateToDetail: (Arti
 
     LaunchedEffect(key1 = true) {
         launcher.launch(Manifest.permission.CAMERA)
+    }
+
+    var barcodeValue by remember { mutableStateOf("") }
+    var detectedArtikel by remember { mutableStateOf<Artikel?>(null) }
+    var isFetching by remember { mutableStateOf(false) }
+    var showCreateButton by remember { mutableStateOf(false) }
+
+    LaunchedEffect(barcodeValue) {
+        if (barcodeValue.isNotEmpty()) {
+            val tempArtikel = Artikel.fromBarcode(barcodeValue)
+            if (tempArtikel != null) {
+                isFetching = true
+                showCreateButton = false
+                try {
+                    val allArtikels = apiService.getArtikel()
+                    val artikelFromApi = allArtikels.find { it.nr == tempArtikel.nr }
+                    if (artikelFromApi != null) {
+                        detectedArtikel = artikelFromApi
+                    } else {
+                        detectedArtikel = null
+                        showCreateButton = true
+                    }
+                } catch (e: Exception) {
+                    detectedArtikel = null
+                    showCreateButton = true
+                } finally {
+                    isFetching = false
+                }
+            } else {
+                detectedArtikel = null
+                showCreateButton = false
+            }
+        }
     }
 
     Scaffold(
@@ -65,12 +105,12 @@ fun BarcodeScannerScreen(onNavigateToList: () -> Unit, onNavigateToDetail: (Arti
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            var barcodeValue by remember { mutableStateOf("") }
             if (hasCameraPermission) {
-
                 Box(modifier = Modifier.weight(1f)) {
                     CameraPreview(onBarcodeDetected = { value ->
-                        barcodeValue = value
+                        if (value != barcodeValue) {
+                            barcodeValue = value
+                        }
                     })
 
                     Surface(
@@ -95,9 +135,25 @@ fun BarcodeScannerScreen(onNavigateToList: () -> Unit, onNavigateToDetail: (Arti
                 }
             }
 
-            val artikel = Artikel.fromBarcode(barcodeValue)
-            if (artikel != null) {
-                ArtikelDetailsCard(artikel = artikel, onShowDetails = { onNavigateToDetail(artikel) })
+            if (isFetching) {
+                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                detectedArtikel?.let { artikel ->
+                    ArtikelDetailsCard(
+                        artikel = artikel,
+                        onShowDetails = { onNavigateToDetail(artikel) }
+                    )
+                }
+
+                if (showCreateButton) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                        Button(onClick = onNavigateToCreate) {
+                            Text("Create Artikel")
+                        }
+                    }
+                }
             }
         }
     }

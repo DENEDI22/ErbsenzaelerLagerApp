@@ -12,6 +12,13 @@ data class ArtikelUpdateRequest(
     val menge: Int
 )
 
+data class ArtikelCreateRequest(
+    val name: String,
+    val messeinheit: String,
+    val preis: Int,
+    val menge: Int
+)
+
 data class Artikel(
     val nr: Int,
     val name: String,
