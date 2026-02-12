@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.team6mobileapp.model.Artikel
 import com.example.team6mobileapp.model.ArtikelUpdateRequest
-import com.example.team6mobileapp.network.ArtikelApiService
+import com.example.team6mobileapp.network.DbClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,10 +26,10 @@ import kotlinx.coroutines.launch
 fun BarcodeScannerScreen(
     onNavigateToList: () -> Unit,
     onNavigateToDetail: (Artikel) -> Unit,
-    onNavigateToCreate: () -> Unit
+    onNavigateToCreate: (Int?) -> Unit
 ) {
     val context = LocalContext.current
-    val apiService = remember { ArtikelApiService.create() }
+    val db = DbClient
     val scope = rememberCoroutineScope()
 
     var hasCameraPermission by remember {
@@ -63,7 +63,7 @@ fun BarcodeScannerScreen(
                 isFetching = true
                 showCreateButton = false
                 try {
-                    val allArtikels = apiService.getArtikel()
+                    val allArtikels = db.getAllArtikel()
                     val artikelFromApi = allArtikels.find { it.nr == tempArtikel.nr }
                     if (artikelFromApi != null) {
                         detectedArtikel = artikelFromApi
@@ -71,7 +71,8 @@ fun BarcodeScannerScreen(
                         detectedArtikel = null
                         showCreateButton = true
                     }
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
+                    android.util.Log.e("BarcodeScannerScreen", "Fetch Error", e)
                     detectedArtikel = null
                     showCreateButton = true
                 } finally {
@@ -149,7 +150,10 @@ fun BarcodeScannerScreen(
 
                 if (showCreateButton) {
                     Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                        Button(onClick = onNavigateToCreate) {
+                        Button(onClick = { 
+                            val tempArtikel = Artikel.fromBarcode(barcodeValue)
+                            onNavigateToCreate(tempArtikel?.nr) 
+                        }) {
                             Text("Create Artikel")
                         }
                     }
@@ -219,26 +223,36 @@ fun ArtikelDetailsCard(artikel: Artikel, onShowDetails: () -> Unit) {
 }
 
 fun SendArtikel(artikel: Artikel) {
-    val apiService = ArtikelApiService.create()
     CoroutineScope(Dispatchers.IO).launch {
         try {
             val updatedArtikel = artikel.copy(menge = artikel.menge - 1)
-            val req = ArtikelUpdateRequest(updatedArtikel.name, updatedArtikel.messeinheit, updatedArtikel.preis, updatedArtikel.preis)
-            apiService.updateArtikel(artikel.nr, req)
-        } catch (e: Exception) {
+            val req = ArtikelUpdateRequest(
+                name = updatedArtikel.name,
+                messeinheit = updatedArtikel.messeinheit,
+                preis = updatedArtikel.preis,
+                menge = updatedArtikel.menge
+            )
+            DbClient.updateArtikel(artikel.nr, req)
+        } catch (e: Throwable) {
+            android.util.Log.e("BarcodeScannerScreen", "Send Error", e)
             e.printStackTrace()
         }
     }
 }
 
 fun ReceiveArtikel(artikel: Artikel) {
-    val apiService = ArtikelApiService.create()
     CoroutineScope(Dispatchers.IO).launch {
         try {
             val updatedArtikel = artikel.copy(menge = artikel.menge + 1)
-            val req = ArtikelUpdateRequest(updatedArtikel.name, updatedArtikel.messeinheit, updatedArtikel.preis, updatedArtikel.preis)
-            apiService.updateArtikel(artikel.nr, req)
-        } catch (e: Exception) {
+            val req = ArtikelUpdateRequest(
+                name = updatedArtikel.name,
+                messeinheit = updatedArtikel.messeinheit,
+                preis = updatedArtikel.preis,
+                menge = updatedArtikel.menge
+            )
+            DbClient.updateArtikel(artikel.nr, req)
+        } catch (e: Throwable) {
+            android.util.Log.e("BarcodeScannerScreen", "Receive Error", e)
             e.printStackTrace()
         }
     }

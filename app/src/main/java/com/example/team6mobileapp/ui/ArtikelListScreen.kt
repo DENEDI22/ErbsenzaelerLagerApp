@@ -3,13 +3,15 @@ package com.example.team6mobileapp.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.team6mobileapp.model.Artikel
-import com.example.team6mobileapp.network.ArtikelApiService
+import com.example.team6mobileapp.network.DbClient
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -20,14 +22,15 @@ fun ArtikelListScreen(onNavigateBack: () -> Unit, onNavigateToDetail: (Artikel) 
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val apiService = remember { ArtikelApiService.create() }
+    val db = DbClient
 
     LaunchedEffect(Unit) {
         scope.launch {
             try {
-                artikels = apiService.getArtikel()
-            } catch (e: Exception) {
+                artikels = db.getAllArtikel()
+            } catch (e: Throwable) {
                 errorMessage = "Failed to load articles: ${e.message}"
+                android.util.Log.e("ArtikelListScreen", "DB Error", e)
                 // DUMMY DATA for demonstration as requested in the issue
                 artikels = listOf(
                     Artikel(1, "Ackersalat", "kg", 5612, 0),
@@ -48,7 +51,7 @@ fun ArtikelListScreen(onNavigateBack: () -> Unit, onNavigateToDetail: (Artikel) 
                 title = { Text("Artikel List") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Text("<") // Simple back button representation
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Zurück")
                     }
                 }
             )

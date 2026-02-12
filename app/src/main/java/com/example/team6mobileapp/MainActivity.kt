@@ -35,6 +35,7 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val navController = rememberNavController()
     var selectedArtikel by remember { mutableStateOf<Artikel?>(null) }
+    var initialNrForCreate by remember { mutableStateOf<Int?>(null) }
 
     NavHost(navController = navController, startDestination = "scanner") {
         composable("scanner") {
@@ -46,7 +47,8 @@ fun AppNavigation() {
                     selectedArtikel = artikel
                     navController.navigate("detail")
                 },
-                onNavigateToCreate = {
+                onNavigateToCreate = { nr ->
+                    initialNrForCreate = nr
                     navController.navigate("create")
                 }
             )
@@ -76,7 +78,8 @@ fun AppNavigation() {
             ArtikelCreateScreen(
                 onNavigateBack = {
                     navController.popBackStack()
-                }
+                },
+                initialNr = initialNrForCreate
             )
         }
     }

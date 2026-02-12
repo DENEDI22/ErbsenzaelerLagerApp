@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.sharp.KeyboardArrowDown
+import androidx.compose.material.icons.sharp.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,13 +36,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.team6mobileapp.model.Artikel
 import com.example.team6mobileapp.model.ArtikelUpdateRequest
-import com.example.team6mobileapp.network.ArtikelApiService
+import com.example.team6mobileapp.network.DbClient
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArtikelDetailedView(onNavigateBack: () -> Unit, artikel: Artikel) {
-    val apiService = remember { ArtikelApiService.create() }
+    val db = DbClient
     val scope = rememberCoroutineScope()
     var currentArtikel by remember { mutableStateOf(artikel) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -49,12 +52,18 @@ fun ArtikelDetailedView(onNavigateBack: () -> Unit, artikel: Artikel) {
         val updatedArtikel = currentArtikel.copy(menge = currentArtikel.menge + delta)
         scope.launch {
             try {
-                val req = ArtikelUpdateRequest(updatedArtikel.name, updatedArtikel.messeinheit, updatedArtikel.preis, updatedArtikel.preis)
-                val result = apiService.updateArtikel(updatedArtikel.nr, req)
-                currentArtikel = result.artikel
+                val req = ArtikelUpdateRequest(
+                    name = updatedArtikel.name,
+                    messeinheit = updatedArtikel.messeinheit,
+                    preis = updatedArtikel.preis,
+                    menge = updatedArtikel.menge
+                )
+                val updated = db.updateArtikel(updatedArtikel.nr, req)
+                currentArtikel = updated
                 errorMessage = null
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 errorMessage = "Fehler beim Aktualisieren: ${e.message}"
+                android.util.Log.e("ArtikelDetailedView", "Update Error", e)
             }
         }
     }
@@ -90,11 +99,14 @@ fun ArtikelDetailedView(onNavigateBack: () -> Unit, artikel: Artikel) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Button(onClick = { 
+                IconButton(onClick = {
                     val delta = inputAmount.toIntOrNull() ?: 0
-                    updateMenge(-delta) 
+                    updateMenge(-delta)
                 }) {
-                    Text("-")
+                    Icon(
+                        imageVector = Icons.Sharp.KeyboardArrowDown ,
+                        contentDescription = "Decrease amount"
+                    )
                 }
                 
                 Text(
@@ -103,11 +115,12 @@ fun ArtikelDetailedView(onNavigateBack: () -> Unit, artikel: Artikel) {
                     style = MaterialTheme.typography.headlineMedium
                 )
                 
-                Button(onClick = { 
+                IconButton(onClick = {
                     val delta = inputAmount.toIntOrNull() ?: 0
                     updateMenge(delta) 
                 }) {
-                    Text("+")
+                    Icon(imageVector = Icons.Sharp.KeyboardArrowUp,
+                        contentDescription = "Increase amount")
                 }
             }
 

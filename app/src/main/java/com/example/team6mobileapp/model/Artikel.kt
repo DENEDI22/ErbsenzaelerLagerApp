@@ -13,6 +13,7 @@ data class ArtikelUpdateRequest(
 )
 
 data class ArtikelCreateRequest(
+    val nr: Int? = null,
     val name: String,
     val messeinheit: String,
     val preis: Int,

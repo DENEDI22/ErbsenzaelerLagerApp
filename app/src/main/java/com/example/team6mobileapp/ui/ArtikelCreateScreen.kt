@@ -1,19 +1,22 @@
 package com.example.team6mobileapp.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.team6mobileapp.model.ArtikelCreateRequest
-import com.example.team6mobileapp.network.ArtikelApiService
+import com.example.team6mobileapp.network.DbClient
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ArtikelCreateScreen(onNavigateBack: () -> Unit) {
+fun ArtikelCreateScreen(onNavigateBack: () -> Unit, initialNr: Int? = null) {
+    var nr by remember { mutableStateOf(initialNr?.toString() ?: "") }
     var name by remember { mutableStateOf("") }
     var messeinheit by remember { mutableStateOf("Stk.") }
     var preis by remember { mutableStateOf("") }
@@ -23,7 +26,7 @@ fun ArtikelCreateScreen(onNavigateBack: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     
     val scope = rememberCoroutineScope()
-    val apiService = remember { ArtikelApiService.create() }
+    val db = DbClient
 
     Scaffold(
         topBar = {
@@ -44,6 +47,14 @@ fun ArtikelCreateScreen(onNavigateBack: () -> Unit) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            OutlinedTextField(
+                value = nr,
+                onValueChange = { nr = it },
+                label = { Text("Artikelnummer (optional)") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
@@ -100,14 +111,16 @@ fun ArtikelCreateScreen(onNavigateBack: () -> Unit) {
                     scope.launch {
                         try {
                             val request = ArtikelCreateRequest(
+                                nr = nr.toIntOrNull(),
                                 name = name,
                                 messeinheit = messeinheit,
                                 preis = preis.toIntOrNull() ?: 0,
                                 menge = menge.toIntOrNull() ?: 0
                             )
-                            apiService.createArtikel(request)
+                            db.createArtikel(request)
                             onNavigateBack()
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
+                            android.util.Log.e("ArtikelCreateScreen", "Create Error", e)
                             e.printStackTrace()
                         }
                     }
