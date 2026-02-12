@@ -1,5 +1,6 @@
 package com.example.team6mobileapp.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -91,36 +92,48 @@ fun ArtikelDetailedView(onNavigateBack: () -> Unit, artikel: Artikel) {
             Text(text = "Nummer: ${currentArtikel.nr}")
             Text(text = "Preis: ${currentArtikel.preis * 0.01f} €")
             Text(text = "Einheit: ${currentArtikel.messeinheit}")
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                IconButton(onClick = {
-                    val delta = inputAmount.toIntOrNull() ?: 0
-                    updateMenge(-delta)
-                }) {
+                IconButton(
+                    onClick = {
+                        val delta = inputAmount.toIntOrNull() ?: 0
+                        updateMenge(-delta)
+                    }, modifier = Modifier.background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.small
+                    )
+                ) {
                     Icon(
-                        imageVector = Icons.Sharp.KeyboardArrowDown ,
+                        imageVector = Icons.Sharp.KeyboardArrowDown,
                         contentDescription = "Decrease amount"
                     )
                 }
-                
+
                 Text(
                     text = "${currentArtikel.menge}",
                     modifier = Modifier.padding(horizontal = 24.dp),
                     style = MaterialTheme.typography.headlineMedium
                 )
-                
-                IconButton(onClick = {
-                    val delta = inputAmount.toIntOrNull() ?: 0
-                    updateMenge(delta) 
-                }) {
-                    Icon(imageVector = Icons.Sharp.KeyboardArrowUp,
-                        contentDescription = "Increase amount")
+
+                IconButton(
+                    onClick = {
+                        val delta = inputAmount.toIntOrNull() ?: 0
+                        updateMenge(delta)
+                    }, modifier = Modifier.background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.small
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Sharp.KeyboardArrowUp,
+                        contentDescription = "Increase amount"
+                    )
                 }
             }
 

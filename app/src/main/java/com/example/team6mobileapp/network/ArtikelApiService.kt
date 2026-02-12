@@ -11,6 +11,8 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 
+
+//Is here in case someone fixes our broken backend...
 interface ArtikelApiService {
     @GET("artikel") // Adjust if you have a specific path
     suspend fun getArtikel(): List<Artikel>
