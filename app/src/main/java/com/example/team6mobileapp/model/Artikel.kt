@@ -1,5 +1,17 @@
 package com.example.team6mobileapp.model
 
+data class ArtikelResponse(
+    val message: String,
+    val artikel: Artikel
+)
+
+data class ArtikelUpdateRequest(
+    val name: String,
+    val messeinheit: String,
+    val preis: Int,
+    val menge: Int
+)
+
 data class Artikel(
     val nr: Int,
     val name: String,
@@ -13,16 +25,12 @@ data class Artikel(
                 return try {
                     val barcodeSplitted = barcodeValue.split(".")
                     if (barcodeSplitted.size >= 4) {
-                        // Matching old ID format to new fields:
-                        // ID.nr.name.menge
-                        // We might need to handle missing messeinheit and preis for barcode scans,
-                        // or assume default values.
                         Artikel(
                             nr = barcodeSplitted[1].toInt(),
                             name = barcodeSplitted[2],
                             menge = barcodeSplitted[3].toInt(),
-                            messeinheit = "Stk.", // Default for scans
-                            preis = 0 // Unknown from barcode
+                            messeinheit = "Stk.",
+                            preis = 0
                         )
                     } else {
                         null

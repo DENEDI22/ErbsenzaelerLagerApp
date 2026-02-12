@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ArtikelListScreen(onNavigateBack: () -> Unit) {
+fun ArtikelListScreen(onNavigateBack: () -> Unit, onNavigateToDetail: (Artikel) -> Unit) {
     val scope = rememberCoroutineScope()
     var artikels by remember { mutableStateOf<List<Artikel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -25,9 +25,6 @@ fun ArtikelListScreen(onNavigateBack: () -> Unit) {
     LaunchedEffect(Unit) {
         scope.launch {
             try {
-                // For demonstration, since the endpoint is a placeholder,
-                // I'll simulate a successful load if it fails or use dummy data.
-                // In a real app, this would be: artikels = apiService.getArtikel()
                 artikels = apiService.getArtikel()
             } catch (e: Exception) {
                 errorMessage = "Failed to load articles: ${e.message}"
@@ -67,7 +64,7 @@ fun ArtikelListScreen(onNavigateBack: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(artikels) { artikel ->
-                        ArtikelListItem(artikel)
+                        ArtikelListItem(artikel, onClick = { onNavigateToDetail(artikel) })
                     }
                 }
             } else {
@@ -82,10 +79,11 @@ fun ArtikelListScreen(onNavigateBack: () -> Unit) {
 }
 
 @Composable
-fun ArtikelListItem(artikel: Artikel) {
+fun ArtikelListItem(artikel: Artikel, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        onClick = onClick
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = artikel.name, style = MaterialTheme.typography.titleMedium)

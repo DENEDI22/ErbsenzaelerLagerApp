@@ -15,10 +15,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.team6mobileapp.model.Artikel
+import com.example.team6mobileapp.model.ArtikelUpdateRequest
+import com.example.team6mobileapp.network.ArtikelApiService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BarcodeScannerScreen(onNavigateToList: () -> Unit) {
+fun BarcodeScannerScreen(onNavigateToList: () -> Unit, onNavigateToDetail: (Artikel) -> Unit) {
     val context = LocalContext.current
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -92,14 +97,14 @@ fun BarcodeScannerScreen(onNavigateToList: () -> Unit) {
 
             val artikel = Artikel.fromBarcode(barcodeValue)
             if (artikel != null) {
-                ArtikelDetailsCard(artikel = artikel)
+                ArtikelDetailsCard(artikel = artikel, onShowDetails = { onNavigateToDetail(artikel) })
             }
         }
     }
 }
 
 @Composable
-fun ArtikelDetailsCard(artikel: Artikel) {
+fun ArtikelDetailsCard(artikel: Artikel, onShowDetails: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -140,15 +145,15 @@ fun ArtikelDetailsCard(artikel: Artikel) {
                     Button(onClick = { ReceiveArtikel(artikel) },
                         modifier = Modifier.padding(5.dp)
                             .fillMaxWidth(0.5f)) {
-                        Text(text = "Receive Artikel", color = MaterialTheme.typography.bodyLarge.color)
+                        Text(text = "Receive 1", color = MaterialTheme.typography.bodyLarge.color)
                     }
                     Button(onClick = { SendArtikel(artikel) },
                         modifier = Modifier.padding(5.dp)
                             .fillMaxWidth(1f)) {
-                        Text(text = "Send Artikel", color = MaterialTheme.typography.bodyLarge.color)
+                        Text(text = "Send 1", color = MaterialTheme.typography.bodyLarge.color)
                     }
                 }
-                Button(onClick = { ShowDetailedArtikelCard(artikel)},
+                Button(onClick = { onShowDetails() },
                     Modifier.fillMaxWidth(1f)){
                     Text(text = "Show Details", color = MaterialTheme.typography.bodyLarge.color)
                 }
@@ -158,10 +163,27 @@ fun ArtikelDetailsCard(artikel: Artikel) {
 }
 
 fun SendArtikel(artikel: Artikel) {
+    val apiService = ArtikelApiService.create()
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val updatedArtikel = artikel.copy(menge = artikel.menge - 1)
+            val req = ArtikelUpdateRequest(updatedArtikel.name, updatedArtikel.messeinheit, updatedArtikel.preis, updatedArtikel.preis)
+            apiService.updateArtikel(artikel.nr, req)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }
 
 fun ReceiveArtikel(artikel: Artikel) {
-}
-
-fun ShowDetailedArtikelCard(artikel: Artikel) {
+    val apiService = ArtikelApiService.create()
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val updatedArtikel = artikel.copy(menge = artikel.menge + 1)
+            val req = ArtikelUpdateRequest(updatedArtikel.name, updatedArtikel.messeinheit, updatedArtikel.preis, updatedArtikel.preis)
+            apiService.updateArtikel(artikel.nr, req)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }
