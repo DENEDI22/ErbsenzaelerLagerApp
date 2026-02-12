@@ -32,11 +32,11 @@ data class Artikel(
             if (barcodeValue.isNotEmpty() && barcodeValue.trim().startsWith("ID")) {
                 return try {
                     val barcodeSplitted = barcodeValue.split(".")
-                    if (barcodeSplitted.size >= 4) {
+                    if (barcodeSplitted.size >= 3) {
                         Artikel(
                             nr = barcodeSplitted[1].toInt(),
-                            name = barcodeSplitted[2],
-                            menge = barcodeSplitted[3].toInt(),
+                            name = "", // Name not in barcode anymore
+                            menge = barcodeSplitted[2].toInt(),
                             messeinheit = "Stk.",
                             preis = 0
                         )

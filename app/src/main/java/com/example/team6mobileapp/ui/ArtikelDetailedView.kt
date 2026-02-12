@@ -107,7 +107,8 @@ fun ArtikelDetailedView(onNavigateBack: () -> Unit, artikel: Artikel) {
                     }, modifier = Modifier.background(
                         color = MaterialTheme.colorScheme.primaryContainer,
                         shape = MaterialTheme.shapes.small
-                    )
+                    ),
+                    enabled = currentArtikel.menge >= (inputAmount.toIntOrNull() ?: 0)
                 ) {
                     Icon(
                         imageVector = Icons.Sharp.KeyboardArrowDown,

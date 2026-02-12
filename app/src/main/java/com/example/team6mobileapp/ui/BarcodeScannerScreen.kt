@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -53,13 +54,16 @@ fun BarcodeScannerScreen(
 
     var barcodeValue by remember { mutableStateOf("") }
     var detectedArtikel by remember { mutableStateOf<Artikel?>(null) }
+    var barcodeMenge by remember { mutableStateOf(0) }
     var isFetching by remember { mutableStateOf(false) }
     var showCreateButton by remember { mutableStateOf(false) }
+    var successCardData by remember { mutableStateOf<Triple<Artikel, Int, String>?>(null) } // Artikel, neueMenge, type ("sent" or "received")
 
     LaunchedEffect(barcodeValue) {
         if (barcodeValue.isNotEmpty()) {
             val tempArtikel = Artikel.fromBarcode(barcodeValue)
             if (tempArtikel != null) {
+                barcodeMenge = tempArtikel.menge
                 isFetching = true
                 showCreateButton = false
                 try {
@@ -142,10 +146,39 @@ fun BarcodeScannerScreen(
                 }
             } else {
                 detectedArtikel?.let { artikel ->
-                    ArtikelDetailsCard(
-                        artikel = artikel,
-                        onShowDetails = { onNavigateToDetail(artikel) }
-                    )
+                    if (successCardData == null) {
+                        ArtikelDetailsCard(
+                            artikel = artikel,
+                            barcodeMenge = barcodeMenge,
+                            onShowDetails = { onNavigateToDetail(artikel) },
+                            onReceive = { amount ->
+                                ReceiveArtikel(artikel, amount) { updated ->
+                                    successCardData = Triple(updated, updated.menge, "received")
+                                }
+                            },
+                            onSend = { amount ->
+                                SendArtikel(artikel, amount) { updated ->
+                                    successCardData = Triple(updated, updated.menge, "sent")
+                                }
+                            }
+                        )
+                    }
+                }
+
+                successCardData?.let { (artikel, neueMenge, type) ->
+                    if (type == "received") {
+                        ArtikelReceivedCard(artikel, neueMenge) {
+                            successCardData = null
+                            barcodeValue = "" // Reset to scan next
+                            detectedArtikel = null
+                        }
+                    } else {
+                        ArtikelSentCard(artikel, neueMenge) {
+                            successCardData = null
+                            barcodeValue = "" // Reset to scan next
+                            detectedArtikel = null
+                        }
+                    }
                 }
 
                 if (showCreateButton) {
@@ -164,7 +197,111 @@ fun BarcodeScannerScreen(
 }
 
 @Composable
-fun ArtikelDetailsCard(artikel: Artikel, onShowDetails: () -> Unit) {
+fun ArtikelSentCard(artikel: Artikel, neueMenge: Int, onDismiss: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            tonalElevation = 6.dp,
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth(0.95f)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Success",
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "${artikel.name} sent successfully",
+                    style = MaterialTheme.typography.titleMedium,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "New Menge: $neueMenge",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                    Text("OK")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ArtikelReceivedCard(artikel: Artikel, neueMenge: Int, onDismiss: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            tonalElevation = 6.dp,
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth(0.95f)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Success",
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "${artikel.name} received successfully",
+                    style = MaterialTheme.typography.titleMedium,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "New Menge: $neueMenge",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                    Text("OK")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ArtikelDetailsCard(
+    artikel: Artikel,
+    barcodeMenge: Int,
+    onShowDetails: () -> Unit,
+    onReceive: (Int) -> Unit,
+    onSend: (Int) -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -193,7 +330,12 @@ fun ArtikelDetailsCard(artikel: Artikel, onShowDetails: () -> Unit) {
                 )
 
                 Text(
-                    text = "Menge: ${artikel.menge}",
+                    text = "Menge im Lager: ${artikel.menge}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Text(
+                    text = "Menge in der Packung: $barcodeMenge",
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Row(
@@ -202,15 +344,16 @@ fun ArtikelDetailsCard(artikel: Artikel, onShowDetails: () -> Unit) {
                         .height(64.dp)
                         .padding(top = 8.dp)
                 ) {
-                    Button(onClick = { ReceiveArtikel(artikel) },
+                    Button(onClick = { onReceive(barcodeMenge) },
                         modifier = Modifier.padding(5.dp)
                             .fillMaxWidth(0.5f)) {
-                        Text(text = "Receive 1", color = MaterialTheme.typography.bodyLarge.color)
+                        Text(text = "Receive $barcodeMenge", color = MaterialTheme.typography.bodyLarge.color)
                     }
-                    Button(onClick = { SendArtikel(artikel) },
+                    Button(onClick = { onSend(barcodeMenge) },
                         modifier = Modifier.padding(5.dp)
-                            .fillMaxWidth(1f)) {
-                        Text(text = "Send 1", color = MaterialTheme.typography.bodyLarge.color)
+                            .fillMaxWidth(1f),
+                        enabled = barcodeMenge <= artikel.menge) {
+                        Text(text = "Send $barcodeMenge", color = MaterialTheme.typography.bodyLarge.color)
                     }
                 }
                 Button(onClick = { onShowDetails() },
@@ -222,17 +365,18 @@ fun ArtikelDetailsCard(artikel: Artikel, onShowDetails: () -> Unit) {
     }
 }
 
-fun SendArtikel(artikel: Artikel) {
+fun SendArtikel(artikel: Artikel, amount: Int, onSuccess: (Artikel) -> Unit) {
     CoroutineScope(Dispatchers.IO).launch {
         try {
-            val updatedArtikel = artikel.copy(menge = artikel.menge - 1)
+            val updatedArtikel = artikel.copy(menge = artikel.menge - amount)
             val req = ArtikelUpdateRequest(
                 name = updatedArtikel.name,
                 messeinheit = updatedArtikel.messeinheit,
                 preis = updatedArtikel.preis,
                 menge = updatedArtikel.menge
             )
-            DbClient.updateArtikel(artikel.nr, req)
+            val result = DbClient.updateArtikel(artikel.nr, req)
+            onSuccess(result)
         } catch (e: Throwable) {
             android.util.Log.e("BarcodeScannerScreen", "Send Error", e)
             e.printStackTrace()
@@ -240,17 +384,18 @@ fun SendArtikel(artikel: Artikel) {
     }
 }
 
-fun ReceiveArtikel(artikel: Artikel) {
+fun ReceiveArtikel(artikel: Artikel, amount: Int, onSuccess: (Artikel) -> Unit) {
     CoroutineScope(Dispatchers.IO).launch {
         try {
-            val updatedArtikel = artikel.copy(menge = artikel.menge + 1)
+            val updatedArtikel = artikel.copy(menge = artikel.menge + amount)
             val req = ArtikelUpdateRequest(
                 name = updatedArtikel.name,
                 messeinheit = updatedArtikel.messeinheit,
                 preis = updatedArtikel.preis,
                 menge = updatedArtikel.menge
             )
-            DbClient.updateArtikel(artikel.nr, req)
+            val result = DbClient.updateArtikel(artikel.nr, req)
+            onSuccess(result)
         } catch (e: Throwable) {
             android.util.Log.e("BarcodeScannerScreen", "Receive Error", e)
             e.printStackTrace()
